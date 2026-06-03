@@ -1,1 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth & Owner Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f4f4f9; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 400px; 
+            margin: 50px auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 8px; 
+            box-sizing: border-box; 
+        }
+        button { 
+            width: 100%; 
+            padding: 10px; 
+            background: #007BFF; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        .logout-btn {
+            background: #dc3545;
+            margin-top: 20px;
+            width: auto;
+            padding: 8px 15px;
+        }
+        .logout-btn:hover {
+            background: #bd2130;
+        }
+        .toggle-link { 
+            text-align: center; 
+            margin-top: 10px; 
+            font-size: 0.9em; 
+            color: #555; 
+            cursor: pointer; 
+        }
+        
+        /* Owner Dashboard Styles */
+        #owner-dashboard { 
+            display: none; 
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px; 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .alarm-badge { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: red; 
+            color: white; 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            font-size: 0.9em;
+        }
+        .dropdown { 
+            display: none; 
+            position: fixed; 
+            top: 65px; 
+            right: 20px; 
+            background: white; 
+            border: 1px solid #ccc; 
+            padding: 15px; 
+            border-radius: 4px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
 
+    <div id="auth-container" class="container">
+        <h2 id="form-title">Sign Up</h2>
+        <div class="form-group" id="name-group">
+            <label for="username">Name</label>
+            <input type="text" id="username" placeholder="Your Name">
+        </div>
+        <div class="form-group">
+            <label for="email">Gmail</label>
+            <input type="email" id="email" placeholder="example@gmail.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Create Password">
+        </div>
+        <button id="submit-btn" onclick="handleSubmit()">Sign Up</button>
+        <div class="toggle-link" id="toggle-auth" onclick="toggleAuthMode()">Already have an account? Log In</div>
+    </div>
+
+    <div id="owner-dashboard">
+        <h2>Welcome Back, Owner!</h2>
+        <p>You are logged into the master account.</p>
+        
+        <button class="logout-btn" onclick="handleLogout()">Log Out</button>
+        
+        <div class="alarm-badge" id="alarm" onclick="toggleDropdown()">1!</div>
+        
+        <div class="dropdown" id="info-dropdown">
+            <h4 style="margin-top: 0;">Newest User Registered:</h4>
+            <p><strong>Name:</strong> <span id="new-user-name">None</span></p>
+            <p><strong>Gmail:</strong> <span id="new-user-email">None</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const OWNER_EMAIL = "owner@gmail.com"; // Master email address
+
+        let isSignUpMode = true;
+        let registeredUsers = []; 
+        let latestUser = null;
+
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            const formTitle = document.getElementById('form-title');
+            const nameGroup = document.getElementById('name-group');
+            const submitBtn = document.getElementById('submit-btn');
+            const toggleLink = document.getElementById('toggle-auth');
+
+            // Clear inputs when swapping modes
+            document.getElementById('username').value = "";
+            document.getElementById('email').value = "";
+            document.getElementById('password').value = "";
+
+            if (isSignUpMode) {
+                formTitle.innerText = "Sign Up";
+                nameGroup.style.display = "block";
+                submitBtn.innerText = "Sign Up";
+                toggleLink.innerText = "Already have an account? Log In";
+            } else {
+                formTitle.innerText = "Log In";
+                nameGroup.style.display = "none";
+                submitBtn.innerText = "Log In";
+                toggleLink.innerText = "Don't have an account? Sign Up";
+            }
+        }
+
+        function handleSubmit() {
+            const name = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert("Please fill out all required fields.");
+                return;
+            }
+
+            if (isSignUpMode) {
+                // --- SIGN UP LOGIC ---
+                if (!name) { alert("Please enter your name."); return; }
+                
+                const newUser = { name, email, password };
+                registeredUsers.push(newUser);
+                latestUser = newUser; // Track latest registration for dashboard
+                
+                alert("Account created successfully! Now try logging in.");
+                toggleAuthMode(); // Automatically flip to login mode
+            } else {
+                // --- LOG IN LOGIC ---
+                if (email === OWNER_EMAIL) {
+                    showOwnerDashboard();
+                } else {
+                    alert(`Logged in successfully as normal user: ${email}`);
+                }
+            }
+        }
+
+        function showOwnerDashboard() {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('owner-dashboard').style.display = 'block';
+            
+            // Render latest registration details inside the alarm container
+            if (latestUser) {
+                document.getElementById('new-user-name').innerText = latestUser.name;
+                document.getElementById('new-user-email').innerText = latestUser.email;
+            } else {
+                document.getElementById('new-user-name').innerText = "No registrations yet";
+                document.getElementById('new-user-email').innerText = "N/A";
+            }
+        }
+
+        function handleLogout() {
+            document.getElementById('owner-dashboard').style.display = 'none';
+            document.getElementById('auth-container').style.display = 'block';
+            if(document.getElementById('info-dropdown').style.display === 'block') {
+                toggleDropdown(); // Hide open dropdown on logout
+            }
+        }
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('info-dropdown');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
